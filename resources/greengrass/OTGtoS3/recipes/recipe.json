@@ -1,0 +1,38 @@
+{
+  "RecipeFormatVersion": "2020-01-25",
+  "ComponentName": "OTGtoS3Component",
+  "ComponentVersion": "1.0.0",
+  "ComponentDescription": "Send OTG Files to S3 after Processing.",
+  "ComponentPublisher": "WirelessEco",
+  "ComponentConfiguration": {},
+  "Manifests": [
+    {
+      "Platform": {
+        "os": "linux"
+      },
+      "Lifecycle": {
+        "run": "node {artifacts:decompressedPath}/OTGToS3/1.0.0/OTGToS3/OTGToS3/artifacts/OTGToS3.js"
+      },
+      "Artifacts": [
+        {
+          "URI": "s3://wirelesseco-components-bucket/OTGtoS3Component/1.0.0/OTGToS3.zip",
+          "Unarchive": "ZIP"
+        }
+      ]
+    },
+    {
+      "Platform": {
+        "os": "windows"
+      },
+      "Lifecycle": {
+        "run": "node {artifacts:decompressedPath}\\OTGToS3\\1.0.0\\OTGToS3\\OTGToS3\\artifacts\\OTGToS3.js "
+      },
+      "Artifacts": [
+        {
+          "URI": "s3://wirelesseco-components-bucket/OTGtoS3Component/1.0.0/OTGToS3.zip",
+          "Unarchive": "ZIP"
+        }
+      ]
+    }
+  ]
+}
