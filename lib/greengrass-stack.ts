@@ -25,6 +25,8 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
       thingGroupName: "MyGreengrassThingGroup",
     });
 
+    // TODO add thing type
+
     // IAM Role for Greengrass
     const greengrassRole = new iam.Role(this, "GreengrassRole", {
       assumedBy: new iam.ServicePrincipal("greengrass.amazonaws.com"),
@@ -37,22 +39,6 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
       // Add necessary IAM policies for Greengrass, S3, etc.
     });
 
-    // Lambda function for creating the Greengrass component
-    const createComponentLambda = new lambda.Function(
-      this,
-      "CreateComponentLambda",
-      {
-        runtime: lambda.Runtime.NODEJS_14_X,
-        handler: "createComponent.handler",
-        code: lambda.Code.fromAsset("path/to/your/lambda/createComponent"),
-        role: lambdaRole,
-        environment: {
-          BUCKET_NAME: componentBucket.bucketName,
-          // ... other necessary environment variables ...
-        },
-      }
-    );
-
     // Lambda function for updating the Greengrass component
     const updateComponentLambda = new lambda.Function(
       this,
@@ -60,43 +46,14 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
       {
         runtime: lambda.Runtime.NODEJS_14_X,
         handler: "updateComponent.handler",
-        code: lambda.Code.fromAsset("path/to/your/lambda/updateComponent"),
+        code: lambda.Code.fromAsset("./resources/lambda/updateComponentLambda"),
         role: lambdaRole,
         environment: {
+          COMPONENT_NAME: "OTGtoS3",
           BUCKET_NAME: componentBucket.bucketName,
           // ... other necessary environment variables ...
         },
       }
-    );
-
-    // Custom resource to trigger the creation Lambda function
-    const createComponentCustomResource = new cr.AwsCustomResource(
-      this,
-      "CreateComponentCustomResource",
-      {
-        onCreate: {
-          service: "Lambda",
-          action: "invoke",
-          parameters: {
-            FunctionName: createComponentLambda.functionName,
-            // Include payload if necessary
-            Payload: JSON.stringify({
-              /* payload content */
-            }),
-          },
-          physicalResourceId: cr.PhysicalResourceId.of(
-            "CreateComponentCustomResource"
-          ),
-        },
-        policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
-          resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
-        }),
-      }
-    );
-
-    // Grant necessary permissions to the custom resource to invoke the Lambda function
-    createComponentLambda.grantInvoke(
-      createComponentCustomResource.grantPrincipal
     );
 
     // Define the source artifact and the build artifact
@@ -106,9 +63,11 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
     // GitHub source action
     const sourceAction = new cpactions.GitHubSourceAction({
       actionName: "GitHub_Source",
-      owner: "GITHUB_USER_OR_ORG",
-      repo: "GITHUB_REPO",
-      oauthToken: cdk.SecretValue.secretsManager("GITHUB_TOKEN"),
+      owner: "evantobin1",
+      repo: "OTGtoS3",
+      oauthToken: cdk.SecretValue.secretsManager("GITHUB_TOKEN", {
+        jsonField: "GITHUB_TOKEN", // This should match the key in your secret
+      }),
       output: sourceArtifact,
       branch: "main", // Your target branch
     });
