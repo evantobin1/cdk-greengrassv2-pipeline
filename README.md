@@ -2,6 +2,7 @@
 
 This project provides an AWS Cloud Development Kit (CDK) setup for deploying a Greengrass V2 infrastructure, including necessary components like AWS IoT Thing Group, Greengrass roles, Lambda functions, and a CI/CD pipeline using AWS CodePipeline and CodeBuild.
 
+![Alt text](/infra.png)
 ## Overview
 
 The CDK stack includes the following resources:
@@ -12,6 +13,8 @@ The CDK stack includes the following resources:
 - Lambda functions for component updates and initialization
 - CodePipeline for CI/CD workflows
 - CodeBuild project for building and deploying resources
+
+
 
 ## Prerequisites
 
@@ -31,8 +34,8 @@ The CDK stack includes the following resources:
 2. **Clone the Repository**: Clone this repository to your local machine.
 
     ```bash
-    git clone https://your-repository-url
-    cd your-cdk-project-directory
+    git clone https://github.com/WirelessEco/laser-greengrass-v2
+    cd laser-greengrass-v2
     ```
 3. **Setup a separate components repo as defined here:** https://github.com/evantobin1/OTGtoS3
 
