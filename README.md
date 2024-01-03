@@ -1,14 +1,57 @@
-# Welcome to your CDK TypeScript project
+# Greengrass CDK Project
 
-This is a blank project for CDK development with TypeScript.
+This project provides an AWS Cloud Development Kit (CDK) setup for deploying a Greengrass V2 infrastructure, including necessary components like AWS IoT Thing Group, Greengrass roles, Lambda functions, and a CI/CD pipeline using AWS CodePipeline and CodeBuild.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## Overview
 
-## Useful commands
+The CDK stack includes the following resources:
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+- S3 Bucket for Greengrass components
+- IoT Thing Group for Greengrass
+- IAM Roles for Greengrass and Lambda functions
+- Lambda functions for component updates and initialization
+- CodePipeline for CI/CD workflows
+- CodeBuild project for building and deploying resources
+
+## Prerequisites
+
+- AWS CLI: Make sure you have the AWS CLI installed and configured with the appropriate credentials and region.
+- Node.js: This project requires Node.js. Install it from [nodejs.org](https://nodejs.org/).
+- AWS CDK: Install the AWS CDK toolkit globally using npm: `npm install -g aws-cdk`.
+- dotenv: Ensure `dotenv` is installed for managing environment variables.
+
+## Setup
+
+1. **Store GitHub Credentials in AWS Secrets Manager**:
+   Before deploying the stack, store your GitHub token in AWS Secrets Manager. This token is used by AWS CodePipeline to access your GitHub repository.
+
+   ```bash
+   aws secretsmanager create-secret --name GITHUB_TOKEN --secret-string '{"GITHUB_TOKEN":"your_github_token_here"}'
+
+2. **Clone the Repository**: Clone this repository to your local machine.
+
+    ```bash
+    git clone https://your-repository-url
+    cd your-cdk-project-directory
+    ```
+
+3. **Install Dependencies**: Install the necessary npm packages.
+
+    ```bash
+    npm install
+    ```
+
+4. **Environment Variables**: Create a `.env` file at the root of your project and define the necessary environment variables as outlined in the `.env.sample` file.
+
+5. **Bootstrap CDK**: If this is your first time using CDK in your AWS account and region, you need to bootstrap CDK.
+
+    ```bash
+    cdk bootstrap
+    ```
+
+## Deployment
+
+To deploy the stack to your AWS account, run:
+
+```bash
+npm run && cdk deploy
