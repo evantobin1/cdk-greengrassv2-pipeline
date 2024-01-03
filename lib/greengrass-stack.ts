@@ -9,10 +9,21 @@ import {
   aws_codepipeline_actions as cpactions,
   aws_codebuild as codebuild,
 } from "aws-cdk-lib";
+require("dotenv").config();
 
 export class GreengrassCdkProjectStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const githubOwner = process.env.GITHUB_OWNER;
+    const githubRepo = process.env.GITHUB_REPO;
+    const githubBranch = process.env.GITHUB_BRANCH || "main"; // default to 'main'
+    const SHOULD_INSTANTIATE_COMPONENTS =
+      process.env.SHOULD_INSTANTIATE_COMPONENTS?.toUpperCase() == "TRUE";
+
+    if (githubOwner == null || githubRepo == null) {
+      throw Error("Error, must define github owner and repo in the .env file.");
+    }
 
     // Create a single S3 bucket for all components
     const componentsBucket = new s3.Bucket(this, "ComponentsBucket", {
@@ -70,22 +81,6 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
       })
     );
 
-    // Lambda function for initializing the Greengrass components.
-    // This will trigger the initialization stage of the Code Pipeline
-    // that will zip up the contents, create the directories within the
-    // bucket, and create the components.
-    const initializeComponentsLambda = new lambda.Function(
-      this,
-      "InitializeComponentLambda",
-      {
-        runtime: lambda.Runtime.NODEJS_14_X,
-        handler: "handler.handler",
-        code: lambda.Code.fromAsset("./resources/lambda/initializeComponents"),
-        role: lambdaRole,
-        environment: {},
-      }
-    );
-
     // Lambda function for updating the Greengrass component
     const updateComponentLambda = new lambda.Function(
       this,
@@ -136,21 +131,28 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
     const sourceArtifact = new codepipeline.Artifact();
     const buildArtifact = new codepipeline.Artifact();
 
+    const artifactBucket = new s3.Bucket(this, "ArtifactBucket", {
+      // other configurations...
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // This will delete the bucket when the stack is destroyed
+      autoDeleteObjects: true, // This will delete all objects in the bucket before deleting the bucket
+    });
+
     // Define the pipeline
     const pipeline = new codepipeline.Pipeline(this, "Pipeline", {
+      artifactBucket: artifactBucket,
       stages: [
         {
           stageName: "Source",
           actions: [
             new cpactions.GitHubSourceAction({
               actionName: "GitHub_Source",
-              owner: "evantobin1",
-              repo: "OTGtoS3",
+              owner: githubOwner,
+              repo: githubRepo,
               oauthToken: cdk.SecretValue.secretsManager("GITHUB_TOKEN", {
                 jsonField: "GITHUB_TOKEN", // This should match the key in your secret
               }),
               output: sourceArtifact,
-              branch: "main", // Your target branch
+              branch: githubBranch, // Your target branch
             }),
           ],
         },
@@ -176,31 +178,52 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
       })
     );
 
-    // Custom resource to trigger the initialization Lambda function
-    const initializeComponentsCustomResource = new cr.AwsCustomResource(
-      this,
-      "InitializeComponentsCustomResource",
-      {
-        onCreate: {
-          service: "Lambda",
-          action: "invoke",
-          parameters: {
-            FunctionName: initializeComponentsLambda.functionName,
-            // Correctly pass the payload using the 'Payload' key
-            Payload: JSON.stringify({
-              pipelineName: pipeline.pipelineName,
-              componentsBucket: componentsBucket.bucketName,
-            }),
+    // If the initialization is specified in the .env
+    if (SHOULD_INSTANTIATE_COMPONENTS) {
+      // Lambda function for initializing the Greengrass components.
+      // This will trigger the initialization stage of the Code Pipeline
+      // that will zip up the contents, create the directories within the
+      // bucket, and create the components.
+      const initializeComponentsLambda = new lambda.Function(
+        this,
+        "InitializeComponentLambda",
+        {
+          runtime: lambda.Runtime.NODEJS_14_X,
+          handler: "handler.handler",
+          code: lambda.Code.fromAsset(
+            "./resources/lambda/initializeComponents"
+          ),
+          role: lambdaRole,
+          environment: {},
+        }
+      );
+
+      // Custom resource to trigger the initialization Lambda function
+      const initializeComponentsCustomResource = new cr.AwsCustomResource(
+        this,
+        "InitializeComponentsCustomResource",
+        {
+          onCreate: {
+            service: "Lambda",
+            action: "invoke",
+            parameters: {
+              FunctionName: initializeComponentsLambda.functionName,
+              // Correctly pass the payload using the 'Payload' key
+              Payload: JSON.stringify({
+                pipelineName: pipeline.pipelineName,
+                componentsBucket: componentsBucket.bucketName,
+              }),
+            },
+            physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()), // Ensure idempotency
           },
-          physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()), // Ensure idempotency
-        },
-        policy: cr.AwsCustomResourcePolicy.fromStatements([
-          new iam.PolicyStatement({
-            actions: ["lambda:InvokeFunction"],
-            resources: [initializeComponentsLambda.functionArn],
-          }),
-        ]),
-      }
-    );
+          policy: cr.AwsCustomResourcePolicy.fromStatements([
+            new iam.PolicyStatement({
+              actions: ["lambda:InvokeFunction"],
+              resources: [initializeComponentsLambda.functionArn],
+            }),
+          ]),
+        }
+      );
+    }
   }
 }
