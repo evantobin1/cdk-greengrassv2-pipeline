@@ -16,7 +16,7 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
 
     // Create a single S3 bucket for all components
     const componentsBucket = new s3.Bucket(this, "ComponentsBucket", {
-      versioned: true, // If you want versioning
+      autoDeleteObjects: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -109,9 +109,7 @@ export class GreengrassCdkProjectStack extends cdk.Stack {
     codeBuildRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
-        resources: [
-          "arn:aws:s3:::greengrassstack-componentsbucket322c7052-vjazwaknja08/*",
-        ],
+        resources: ["*"],
         // Replace with the ARN of your specific S3 bucket
       })
     );
