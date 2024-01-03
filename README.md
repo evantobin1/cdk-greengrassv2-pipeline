@@ -34,6 +34,7 @@ The CDK stack includes the following resources:
     git clone https://your-repository-url
     cd your-cdk-project-directory
     ```
+3. **Setup a separate components repo as defined here:** https://github.com/evantobin1/OTGtoS3
 
 3. **Install Dependencies**: Install the necessary npm packages.
 
