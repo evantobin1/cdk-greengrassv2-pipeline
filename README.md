@@ -34,8 +34,8 @@ The CDK stack includes the following resources:
 2. **Clone the Repository**: Clone this repository to your local machine.
 
     ```bash
-    git clone https://github.com/WirelessEco/laser-greengrass-v2
-    cd laser-greengrass-v2
+    git clone https://github.com/evantobin1/cdk-greengrassv2-pipeline
+    cd cdk-greengrassv2-pipeline
     ```
 3. **Setup a separate components repo as defined here:** https://github.com/evantobin1/OTGtoS3
 
